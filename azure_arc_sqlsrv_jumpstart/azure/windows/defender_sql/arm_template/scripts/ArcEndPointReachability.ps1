@@ -15,8 +15,8 @@ $OutJson = Join-Path $env:TEMP "arc-endpoints-$Location-$Timestamp.json"
 Write-Host "Azure Arc reachability check for region: $Location" -ForegroundColor Cyan
 
 function Invoke-HttpHead {
-  param([Parameter(Mandatory)][string]$Host, [int]$TimeoutSec = 10, [string]$Proxy)
-  $uri = "https://$Host/"
+  param([Parameter(Mandatory)][string]$TargetHost, [int]$TimeoutSec = 10, [string]$Proxy)
+  $uri = "https://$TargetHost/"
   try {
     $params = @{ Uri = $uri; Method = 'Head'; TimeoutSec = $TimeoutSec; ErrorAction = 'Stop' }
     if ($Proxy) {
@@ -107,7 +107,7 @@ $results = foreach ($h in $endpoints) {
     if (-not $tlsOk) { $tlsErr = "TCP 443 failed" }
   } catch { $tlsErr = $_.Exception.Message }
 
-  $http = Invoke-HttpHead -Host $h -TimeoutSec $TimeoutSec -Proxy $Proxy
+  $http = Invoke-HttpHead -TargetHost $h -TimeoutSec $TimeoutSec -Proxy $Proxy
 
   [pscustomobject]@{
     Host   = $h
