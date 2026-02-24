@@ -12,19 +12,19 @@
             "value": "arcdemo"
         },
         "windowsAdminPassword": {
-            "value": "ArcPassword123!!"
+            "value": "arc@DEMO12345!"
         },
         "logAnalyticsWorkspaceName": {
             "value": "LocalBox-Workspace"
         },
         "deployBastion": {
-            "value": false
+            "value": true
         },
         "autoDeployClusterResource": {
-            "value": false
+            "value": true
         },
         "autoUpgradeClusterResource": {
-            "value": false
+            "value": true
         }
     }
 }
