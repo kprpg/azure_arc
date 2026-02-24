@@ -130,16 +130,24 @@ Resize-Partition -DriveLetter C -Size $(Get-PartitionSupportedSize -DriveLetter 
 Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force
 
 Install-Module -Name Microsoft.PowerShell.PSResourceGet -Force
-$modules = @("Az", "Az.ConnectedMachine", "Az.ConnectedKubernetes", "Az.CustomLocation", "Azure.Arc.Jumpstart.Common", "Microsoft.PowerShell.SecretManagement", "Pester")
 
-foreach ($module in $modules) {
-    Install-PSResource -Name $module -Scope AllUsers -Quiet -AcceptLicense -TrustRepository
-}
+# Pin Az-modules after other modules to avoid version conflicts
+# See: https://github.com/microsoft/azure_arc/issues/3359
+Install-PSResource -Name Az.Accounts -Version 5.3.1 -Scope AllUsers -Quiet -AcceptLicense -TrustRepository -Reinstall
+Install-PSResource -Name Az.KeyVault -Version 6.4.1 -Scope AllUsers -Quiet -AcceptLicense -TrustRepository -Reinstall
+Install-PSResource -Name Az.Compute -Version 11.1.0 -Scope AllUsers -Quiet -AcceptLicense -TrustRepository -Reinstall
+Install-PSResource -Name Az.Resources -Version 9.0.0 -Scope AllUsers -Quiet -AcceptLicense -TrustRepository -Reinstall
+Install-PSResource -Name Az.Storage -Version 9.4.0  -Scope AllUsers -Quiet -AcceptLicense -TrustRepository -Reinstall
+Install-PSResource -Name Microsoft.PowerShell.SecretManagement -Version 1.1.2 -Scope AllUsers -Quiet -AcceptLicense -TrustRepository -Reinstall
 
-# Add Key Vault Secrets
-Connect-AzAccount -Identity
+# Import the module to ensure the correct version is loaded
+Import-Module Az.Accounts -RequiredVersion 5.3.1 -Force
+Import-Module Az.KeyVault -RequiredVersion 6.4.1 -Force
+Import-Module Az.Resources -RequiredVersion 9.0.0 -Force
 
 $DeploymentProgressString = "Started bootstrap-script..."
+
+Connect-AzAccount -Identity
 
 $tags = Get-AzResourceGroup -Name $resourceGroup | Select-Object -ExpandProperty Tags
 
@@ -199,7 +207,7 @@ if ($autoShutdownEnabled -eq "true") {
 
 }
 
-# Installing tools
+# Installing tools and module
 
 Write-Header "Installing PowerShell 7"
 
@@ -212,6 +220,13 @@ Start-Process msiexec.exe -Wait -ArgumentList '/I PowerShell7.msi /quiet ADD_EXP
 Remove-Item .\PowerShell7.msi
 
 Copy-Item $PsHome\Profile.ps1 -Destination "C:\Program Files\PowerShell\7\"
+
+
+$modules = @("Az.ConnectedMachine", "Az.ConnectedKubernetes", "Az.CustomLocation", "Azure.Arc.Jumpstart.Common", "Pester")
+
+foreach ($module in $modules) {
+    Install-PSResource -Name $module -Scope AllUsers -Quiet -AcceptLicense -TrustRepository
+}
 
 Write-Header "Fetching GitHub Artifacts"
 
