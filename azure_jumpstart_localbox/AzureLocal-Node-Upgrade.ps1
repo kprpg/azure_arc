@@ -5,7 +5,7 @@ $params = @{
   ResourceProviderName = "Microsoft.HybridCompute"
   ResourceType = "Machines"
   ApiVersion = "2024-05-20-preview"
-  Name = "AZLHOST2"
+  Name = "AZLHOST1"
   Method = "PATCH"
   Payload = '{"properties":{"agentUpgrade":{ "enableAutomaticUpgrade":true}}}'
 }
