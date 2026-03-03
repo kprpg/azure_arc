@@ -1,0 +1,713 @@
+﻿{
+    "contentVersion":  "1.0.0.0",
+    "parameters":  {
+                       "workbookDisplayName":  {
+                                                   "type":  "string",
+                                                   "defaultValue":  "Azure Arc Hybrid Governance Workbook",
+                                                   "metadata":  {
+                                                                    "description":  "Workbook display name shown in Azure Monitor Workbooks gallery."
+                                                                }
+                                               },
+                       "workbookType":  {
+                                            "type":  "string",
+                                            "defaultValue":  "workbook",
+                                            "metadata":  {
+                                                             "description":  "Workbook gallery category. Usually workbook."
+                                                         }
+                                        },
+                       "workbookSourceId":  {
+                                                "type":  "string",
+                                                "defaultValue":  "azure monitor",
+                                                "metadata":  {
+                                                                 "description":  "Source resource id associated with the workbook."
+                                                             }
+                                            },
+                       "workbookId":  {
+                                          "type":  "string",
+                                          "defaultValue":  "[newGuid()]",
+                                          "metadata":  {
+                                                           "description":  "Unique workbook resource id."
+                                                       }
+                                      }
+                   },
+    "variables":  {
+                      "workbookContent":  {
+                                              "version":  "Notebook/1.0",
+                                              "items":  [
+                                                            {
+                                                                "type":  1,
+                                                                "content":  {
+                                                                                "json":  "# Azure Arc Hybrid Inventory, Patching, SQL, and Shadow IT Workbook\n\nMAP-like continuous discovery and operations visibility for hybrid/on-prem assets onboarded to Azure Arc and Azure Monitor."
+                                                                            },
+                                                                "name":  "title"
+                                                            },
+                                                            {
+                                                                "type":  9,
+                                                                "content":  {
+                                                                                "version":  "KqlParameterItem/1.0",
+                                                                                "parameters":  [
+                                                                                                   {
+                                                                                                       "id":  "a8870ea2-1794-4c44-a656-f0bc47d35111",
+                                                                                                       "version":  "KqlParameterItem/1.0",
+                                                                                                       "name":  "Subscription",
+                                                                                                       "label":  "Subscription",
+                                                                                                       "type":  6,
+                                                                                                       "isRequired":  true,
+                                                                                                       "multiSelect":  true,
+                                                                                                       "quote":  "\u0027",
+                                                                                                       "delimiter":  ",",
+                                                                                                       "query":  "Resources\n| where type in~ (\u0027microsoft.hybridcompute/machines\u0027,\u0027microsoft.compute/virtualmachines\u0027)\n| summarize Count = count() by subscriptionId\n| order by Count desc\n| project value = subscriptionId, label = subscriptionId",
+                                                                                                       "crossComponentResources":  [
+                                                                                                                                       "value::all"
+                                                                                                                                   ],
+                                                                                                       "queryType":  1,
+                                                                                                       "resourceType":  "microsoft.resourcegraph/resources",
+                                                                                                       "value":  [
+                                                                                                                     "value::all"
+                                                                                                                 ],
+                                                                                                       "typeSettings":  {
+                                                                                                                            "additionalResourceOptions":  [
+                                                                                                                                                              "value::all"
+                                                                                                                                                          ],
+                                                                                                                            "includeAll":  true,
+                                                                                                                            "showDefault":  false
+                                                                                                                        }
+                                                                                                   },
+                                                                                                   {
+                                                                                                       "id":  "4af6c548-3e45-4408-aab7-31cfc3e910c5",
+                                                                                                       "version":  "KqlParameterItem/1.0",
+                                                                                                       "name":  "Workspace",
+                                                                                                       "label":  "Log Analytics Workspace",
+                                                                                                       "type":  5,
+                                                                                                       "isRequired":  true,
+                                                                                                       "multiSelect":  true,
+                                                                                                       "quote":  "\u0027",
+                                                                                                       "delimiter":  ",",
+                                                                                                       "query":  "where type =~ \u0027microsoft.operationalinsights/workspaces\u0027\n| summarize by id, name\n| order by name asc",
+                                                                                                       "crossComponentResources":  [
+                                                                                                                                       "value::all"
+                                                                                                                                   ],
+                                                                                                       "value":  [
+
+                                                                                                                 ],
+                                                                                                       "typeSettings":  {
+                                                                                                                            "additionalResourceOptions":  [
+
+                                                                                                                                                          ],
+                                                                                                                            "showDefault":  false
+                                                                                                                        },
+                                                                                                       "queryType":  1,
+                                                                                                       "resourceType":  "microsoft.resourcegraph/resources"
+                                                                                                   },
+                                                                                                   {
+                                                                                                       "id":  "88954246-b63a-4bf8-8e34-d5b8b242178f",
+                                                                                                       "version":  "KqlParameterItem/1.0",
+                                                                                                       "name":  "ResourceGroup",
+                                                                                                       "label":  "Resource group",
+                                                                                                       "type":  2,
+                                                                                                       "isRequired":  true,
+                                                                                                       "multiSelect":  true,
+                                                                                                       "quote":  "\u0027",
+                                                                                                       "delimiter":  ",",
+                                                                                                       "query":  "resourcecontainers\n| where type =~ \u0027microsoft.resources/subscriptions/resourcegroups\u0027\n| where \u0027*\u0027 in ({Subscription}) or subscriptionId in ({Subscription})\n| project value = name, label = name\n| order by label asc",
+                                                                                                       "crossComponentResources":  [
+                                                                                                                                       "{Subscription}"
+                                                                                                                                   ],
+                                                                                                       "value":  [
+                                                                                                                     "value::all"
+                                                                                                                 ],
+                                                                                                       "typeSettings":  {
+                                                                                                                            "additionalResourceOptions":  [
+                                                                                                                                                              "value::all"
+                                                                                                                                                          ],
+                                                                                                                            "selectAllValue":  "*",
+                                                                                                                            "showDefault":  false
+                                                                                                                        },
+                                                                                                       "queryType":  1,
+                                                                                                       "resourceType":  "microsoft.resourcegraph/resources"
+                                                                                                   },
+                                                                                                   {
+                                                                                                       "id":  "7e56b3a7-d160-4a15-ac36-31ad4f825f58",
+                                                                                                       "version":  "KqlParameterItem/1.0",
+                                                                                                       "name":  "MachineScope",
+                                                                                                       "label":  "Machine scope",
+                                                                                                       "type":  2,
+                                                                                                       "isRequired":  true,
+                                                                                                       "multiSelect":  true,
+                                                                                                       "quote":  "\u0027",
+                                                                                                       "delimiter":  ",",
+                                                                                                       "value":  [
+                                                                                                                     "Arc"
+                                                                                                                 ],
+                                                                                                       "jsonData":  "[\n  { \"value\": \"Arc\", \"label\": \"Arc-enabled servers\", \"selected\": true },\n  { \"value\": \"AzureVM\", \"label\": \"Azure VMs\", \"selected\": false }\n]"
+                                                                                                   },
+                                                                                                   {
+                                                                                                       "id":  "30bc205d-ed8d-4bb1-8581-95ef960f8a7f",
+                                                                                                       "version":  "KqlParameterItem/1.0",
+                                                                                                       "name":  "OSType",
+                                                                                                       "label":  "OS type",
+                                                                                                       "type":  2,
+                                                                                                       "isRequired":  true,
+                                                                                                       "multiSelect":  true,
+                                                                                                       "quote":  "\u0027",
+                                                                                                       "delimiter":  ",",
+                                                                                                       "value":  [
+                                                                                                                     "All"
+                                                                                                                 ],
+                                                                                                       "jsonData":  "[\n  { \"value\": \"All\", \"label\": \"All\", \"selected\": true },\n  { \"value\": \"Windows\", \"label\": \"Windows\" },\n  { \"value\": \"Linux\", \"label\": \"Linux\" }\n]"
+                                                                                                   },
+                                                                                                   {
+                                                                                                       "id":  "0f8f223f-c8d8-4d35-82a3-afcaeb2f93af",
+                                                                                                       "version":  "KqlParameterItem/1.0",
+                                                                                                       "name":  "DbKeywords",
+                                                                                                       "label":  "Shadow DB keywords",
+                                                                                                       "type":  1,
+                                                                                                       "isRequired":  true,
+                                                                                                       "value":  "MySQL,Postgre,Oracle,Mongo,Redis"
+                                                                                                   },
+                                                                                                   {
+                                                                                                       "id":  "fdb6f8b4-dba2-40d4-ad22-29906d6c55f4",
+                                                                                                       "version":  "KqlParameterItem/1.0",
+                                                                                                       "name":  "timeRange",
+                                                                                                       "label":  "Time Range",
+                                                                                                       "type":  4,
+                                                                                                       "isRequired":  true,
+                                                                                                       "value":  {
+                                                                                                                     "durationMs":  604800000
+                                                                                                                 },
+                                                                                                       "typeSettings":  {
+                                                                                                                            "selectableValues":  [
+                                                                                                                                                     {
+                                                                                                                                                         "durationMs":  3600000
+                                                                                                                                                     },
+                                                                                                                                                     {
+                                                                                                                                                         "durationMs":  14400000
+                                                                                                                                                     },
+                                                                                                                                                     {
+                                                                                                                                                         "durationMs":  86400000
+                                                                                                                                                     },
+                                                                                                                                                     {
+                                                                                                                                                         "durationMs":  604800000
+                                                                                                                                                     },
+                                                                                                                                                     {
+                                                                                                                                                         "durationMs":  2592000000
+                                                                                                                                                     }
+                                                                                                                                                 ],
+                                                                                                                            "allowCustom":  true
+                                                                                                                        }
+                                                                                                   },
+                                                                                                   {
+                                                                                                       "id":  "5f6ef849-ae01-48cc-a73c-90d6e872f0ec",
+                                                                                                       "version":  "KqlParameterItem/1.0",
+                                                                                                       "name":  "selectedTab",
+                                                                                                       "type":  1,
+                                                                                                       "isRequired":  true,
+                                                                                                       "value":  "Executive"
+                                                                                                   }
+                                                                                               ],
+                                                                                "style":  "pills",
+                                                                                "queryType":  1,
+                                                                                "resourceType":  "microsoft.resourcegraph/resources"
+                                                                            },
+                                                                "name":  "global-parameters"
+                                                            },
+                                                            {
+                                                                "type":  11,
+                                                                "content":  {
+                                                                                "version":  "LinkItem/1.0",
+                                                                                "style":  "tabs",
+                                                                                "links":  [
+                                                                                              {
+                                                                                                  "id":  "d32f38e9-0a6e-4f0a-a43d-3963a8a6db39",
+                                                                                                  "cellValue":  "selectedTab",
+                                                                                                  "linkTarget":  "parameter",
+                                                                                                  "linkLabel":  "Executive",
+                                                                                                  "subTarget":  "Executive",
+                                                                                                  "style":  "link"
+                                                                                              },
+                                                                                              {
+                                                                                                  "id":  "79f7716f-0b8b-460e-b2a1-2ec1e53bd0cc",
+                                                                                                  "cellValue":  "selectedTab",
+                                                                                                  "linkTarget":  "parameter",
+                                                                                                  "linkLabel":  "Inventory",
+                                                                                                  "subTarget":  "Inventory",
+                                                                                                  "style":  "link"
+                                                                                              },
+                                                                                              {
+                                                                                                  "id":  "f0d4c325-a996-4a29-9815-5388e77f252d",
+                                                                                                  "cellValue":  "selectedTab",
+                                                                                                  "linkTarget":  "parameter",
+                                                                                                  "linkLabel":  "Patch",
+                                                                                                  "subTarget":  "Patch",
+                                                                                                  "style":  "link"
+                                                                                              },
+                                                                                              {
+                                                                                                  "id":  "48f06d3f-cf75-44e8-956a-06670a590f84",
+                                                                                                  "cellValue":  "selectedTab",
+                                                                                                  "linkTarget":  "parameter",
+                                                                                                  "linkLabel":  "SQL",
+                                                                                                  "subTarget":  "SQL",
+                                                                                                  "style":  "link"
+                                                                                              },
+                                                                                              {
+                                                                                                  "id":  "18783348-80cd-44c5-b2f2-856f0572af85",
+                                                                                                  "cellValue":  "selectedTab",
+                                                                                                  "linkTarget":  "parameter",
+                                                                                                  "linkLabel":  "ShadowIT",
+                                                                                                  "subTarget":  "ShadowIT",
+                                                                                                  "style":  "link"
+                                                                                              },
+                                                                                              {
+                                                                                                  "id":  "44db08d6-67ea-4c61-8d36-a2fb7f7ecc19",
+                                                                                                  "cellValue":  "selectedTab",
+                                                                                                  "linkTarget":  "parameter",
+                                                                                                  "linkLabel":  "Security",
+                                                                                                  "subTarget":  "Security",
+                                                                                                  "style":  "link"
+                                                                                              }
+                                                                                          ]
+                                                                            },
+                                                                "name":  "tabs"
+                                                            },
+                                                            {
+                                                                "type":  12,
+                                                                "content":  {
+                                                                                "version":  "NotebookGroup/1.0",
+                                                                                "groupType":  "editable",
+                                                                                "title":  "Executive Summary",
+                                                                                "items":  [
+                                                                                              {
+                                                                                                  "type":  3,
+                                                                                                  "content":  {
+                                                                                                                  "version":  "KqlItem/1.0",
+                                                                                                                  "query":  "let MachineInventory = Resources\n| where type in~ (\u0027microsoft.hybridcompute/machines\u0027,\u0027microsoft.compute/virtualmachines\u0027)\n| where \u0027*\u0027 in ({Subscription}) or subscriptionId in ({Subscription})\n| where \u0027*\u0027 in ({ResourceGroup}) or resourceGroup in ({ResourceGroup})\n| extend Scope = iff(type =~ \u0027microsoft.hybridcompute/machines\u0027, \u0027Arc\u0027, \u0027AzureVM\u0027)\n| extend OSTypeNorm = tolower(coalesce(tostring(properties.osName), tostring(properties.osType), tostring(properties.storageProfile.osDisk.osType)))\n| where \u0027*\u0027 in ({MachineScope}) or Scope in ({MachineScope})\n| where \u0027All\u0027 in ({OSType}) or (\u0027Windows\u0027 in ({OSType}) and OSTypeNorm has \u0027windows\u0027) or (\u0027Linux\u0027 in ({OSType}) and OSTypeNorm has \u0027linux\u0027);\nlet TotalMachines = toscalar(MachineInventory | summarize c = count());\nlet ReportingMachines = toscalar(Heartbeat | where TimeGenerated \u003e ago(15m) | summarize c = dcount(Computer));\nlet MissingUpdates = toscalar(union isfuzzy=true UpdateSummary | extend Missing = tolong(column_ifexists(\u0027MissingCount\u0027, column_ifexists(\u0027TotalUpdatesMissing\u0027, 0))) | summarize c = sum(Missing));\nlet SqlDetected = toscalar(union isfuzzy=true ConfigurationData | where ConfigDataType == \u0027WindowsServices\u0027 | extend ServiceNameNorm = tostring(coalesce(column_ifexists(\u0027ServiceName\u0027, \u0027\u0027), column_ifexists(\u0027Name\u0027, \u0027\u0027), column_ifexists(\u0027DisplayName\u0027, \u0027\u0027), column_ifexists(\u0027SvcName\u0027, \u0027\u0027))) | where ServiceNameNorm has \u0027MSSQL\u0027 | summarize c = dcount(Computer));\nlet ShadowDbDetected = toscalar(union isfuzzy=true ConfigurationData | where ConfigDataType == \u0027Software\u0027 | extend SoftwareNameNorm = tostring(coalesce(column_ifexists(\u0027SoftwareName\u0027, \u0027\u0027), column_ifexists(\u0027DisplayName\u0027, \u0027\u0027), column_ifexists(\u0027Name\u0027, \u0027\u0027))) | where SoftwareNameNorm has_any (\u0027MySQL\u0027,\u0027Postgre\u0027,\u0027Oracle\u0027,\u0027Mongo\u0027,\u0027Redis\u0027) | summarize c = dcount(Computer));\nprint TotalMachines, ReportingMachines, MissingUpdates, SqlDetected, ShadowDbDetected",
+                                                                                                                  "size":  0,
+                                                                                                                  "title":  "Hybrid KPI Snapshot",
+                                                                                                                  "timeContextFromParameter":  "timeRange",
+                                                                                                                  "queryType":  1,
+                                                                                                                  "resourceType":  "microsoft.resourcegraph/resources",
+                                                                                                                  "crossComponentResources":  [
+                                                                                                                                                  "{Workspace}",
+                                                                                                                                                  "{Subscription}"
+                                                                                                                                              ],
+                                                                                                                  "visualization":  "tiles",
+                                                                                                                  "tileSettings":  {
+                                                                                                                                       "showBorder":  false,
+                                                                                                                                       "titleContent":  {
+                                                                                                                                                            "columnMatch":  "TotalMachines",
+                                                                                                                                                            "formatter":  1
+                                                                                                                                                        },
+                                                                                                                                       "leftContent":  {
+                                                                                                                                                           "columnMatch":  "TotalMachines",
+                                                                                                                                                           "formatter":  12
+                                                                                                                                                       }
+                                                                                                                                   }
+                                                                                                              },
+                                                                                                  "name":  "exec-kpi"
+                                                                                              },
+                                                                                              {
+                                                                                                  "type":  3,
+                                                                                                  "content":  {
+                                                                                                                  "version":  "KqlItem/1.0",
+                                                                                                                  "query":  "Heartbeat\n| where TimeGenerated \u003e ago(7d)\n| summarize LastHeartbeat = max(TimeGenerated) by Computer, OSType\n| extend Status = iff(LastHeartbeat \u003e ago(15m), \u0027Online\u0027, \u0027Offline\u0027)\n| summarize Machines = count() by Status\n| order by Machines desc",
+                                                                                                                  "size":  0,
+                                                                                                                  "title":  "Online vs Offline",
+                                                                                                                  "timeContextFromParameter":  "timeRange",
+                                                                                                                  "queryType":  0,
+                                                                                                                  "resourceType":  "microsoft.operationalinsights/workspaces",
+                                                                                                                  "crossComponentResources":  [
+                                                                                                                                                  "{Workspace}"
+                                                                                                                                              ],
+                                                                                                                  "visualization":  "piechart"
+                                                                                                              },
+                                                                                                  "customWidth":  "50",
+                                                                                                  "name":  "exec-online"
+                                                                                              },
+                                                                                              {
+                                                                                                  "type":  3,
+                                                                                                  "content":  {
+                                                                                                                  "version":  "KqlItem/1.0",
+                                                                                                                  "query":  "union isfuzzy=true UpdateSummary\n| extend Installed = tolong(column_ifexists(\u0027InstalledCount\u0027, 0)), Missing = tolong(column_ifexists(\u0027MissingCount\u0027, column_ifexists(\u0027TotalUpdatesMissing\u0027, 0)))\n| summarize Installed = sum(Installed), Missing = sum(Missing) by Computer\n| extend CompliancePercent = iff((Installed + Missing) == 0, real(null), round(100.0 * todouble(Installed) / todouble(Installed + Missing), 2))\n| summarize AvgCompliance = round(avg(CompliancePercent), 2)\n| project [\u0027Average Patch Compliance %\u0027] = coalesce(AvgCompliance, 0.0)",
+                                                                                                                  "size":  0,
+                                                                                                                  "title":  "Average Patch Compliance",
+                                                                                                                  "timeContextFromParameter":  "timeRange",
+                                                                                                                  "queryType":  0,
+                                                                                                                  "resourceType":  "microsoft.operationalinsights/workspaces",
+                                                                                                                  "crossComponentResources":  [
+                                                                                                                                                  "{Workspace}"
+                                                                                                                                              ],
+                                                                                                                  "visualization":  "table"
+                                                                                                              },
+                                                                                                  "customWidth":  "50",
+                                                                                                  "name":  "exec-compliance"
+                                                                                              }
+                                                                                          ]
+                                                                            },
+                                                                "conditionalVisibility":  {
+                                                                                              "parameterName":  "selectedTab",
+                                                                                              "comparison":  "isEqualTo",
+                                                                                              "value":  "Executive"
+                                                                                          },
+                                                                "name":  "tab-executive"
+                                                            },
+                                                            {
+                                                                "type":  12,
+                                                                "content":  {
+                                                                                "version":  "NotebookGroup/1.0",
+                                                                                "groupType":  "editable",
+                                                                                "title":  "Hybrid Inventory",
+                                                                                "items":  [
+                                                                                              {
+                                                                                                  "type":  3,
+                                                                                                  "content":  {
+                                                                                                                  "version":  "KqlItem/1.0",
+                                                                                                                  "query":  "Resources\n| where type in~ (\u0027microsoft.hybridcompute/machines\u0027,\u0027microsoft.compute/virtualmachines\u0027)\n| where \u0027*\u0027 in ({Subscription}) or subscriptionId in ({Subscription})\n| where \u0027*\u0027 in ({ResourceGroup}) or resourceGroup in ({ResourceGroup})\n| extend Scope = iff(type =~ \u0027microsoft.hybridcompute/machines\u0027, \u0027Arc\u0027, \u0027AzureVM\u0027)\n| extend OSTypeNorm = tolower(coalesce(tostring(properties.osName), tostring(properties.osType), tostring(properties.storageProfile.osDisk.osType)))\n| where \u0027*\u0027 in ({MachineScope}) or Scope in ({MachineScope})\n| where \u0027All\u0027 in ({OSType}) or (\u0027Windows\u0027 in ({OSType}) and OSTypeNorm has \u0027windows\u0027) or (\u0027Linux\u0027 in ({OSType}) and OSTypeNorm has \u0027linux\u0027)\n| project name, Scope, OSType = OSTypeNorm, location, resourceGroup, subscriptionId, id\n| order by name asc",
+                                                                                                                  "size":  1,
+                                                                                                                  "title":  "Machine Inventory",
+                                                                                                                  "queryType":  1,
+                                                                                                                  "resourceType":  "microsoft.resourcegraph/resources",
+                                                                                                                  "crossComponentResources":  [
+                                                                                                                                                  "{Subscription}"
+                                                                                                                                              ],
+                                                                                                                  "gridSettings":  {
+                                                                                                                                       "formatters":  [
+                                                                                                                                                          {
+                                                                                                                                                              "columnMatch":  "id",
+                                                                                                                                                              "formatter":  13,
+                                                                                                                                                              "formatOptions":  {
+                                                                                                                                                                                    "linkTarget":  "Resource",
+                                                                                                                                                                                    "showIcon":  true
+                                                                                                                                                                                }
+                                                                                                                                                          }
+                                                                                                                                                      ]
+                                                                                                                                   }
+                                                                                                              },
+                                                                                                  "name":  "inv-grid"
+                                                                                              },
+                                                                                              {
+                                                                                                  "type":  3,
+                                                                                                  "content":  {
+                                                                                                                  "version":  "KqlItem/1.0",
+                                                                                                                  "query":  "Heartbeat\n| summarize LastHeartbeat = max(TimeGenerated) by Computer, OSType, ResourceGroup, SubscriptionId\n| extend Status = iff(LastHeartbeat \u003e ago(15m), \u0027Online\u0027, \u0027Offline\u0027)\n| summarize Machines = count() by OSType, Status\n| order by Machines desc",
+                                                                                                                  "size":  0,
+                                                                                                                  "title":  "Inventory by OS and Status",
+                                                                                                                  "timeContextFromParameter":  "timeRange",
+                                                                                                                  "queryType":  0,
+                                                                                                                  "resourceType":  "microsoft.operationalinsights/workspaces",
+                                                                                                                  "crossComponentResources":  [
+                                                                                                                                                  "{Workspace}"
+                                                                                                                                              ],
+                                                                                                                  "visualization":  "barchart"
+                                                                                                              },
+                                                                                                  "name":  "inv-os-status"
+                                                                                              }
+                                                                                          ]
+                                                                            },
+                                                                "conditionalVisibility":  {
+                                                                                              "parameterName":  "selectedTab",
+                                                                                              "comparison":  "isEqualTo",
+                                                                                              "value":  "Inventory"
+                                                                                          },
+                                                                "name":  "tab-inventory"
+                                                            },
+                                                            {
+                                                                "type":  12,
+                                                                "content":  {
+                                                                                "version":  "NotebookGroup/1.0",
+                                                                                "groupType":  "editable",
+                                                                                "title":  "Patch Operations",
+                                                                                "items":  [
+                                                                                              {
+                                                                                                  "type":  3,
+                                                                                                  "content":  {
+                                                                                                                  "version":  "KqlItem/1.0",
+                                                                                                                  "query":  "union isfuzzy=true Update\n| summarize MissingUpdates = count() by Computer, Classification\n| order by MissingUpdates desc",
+                                                                                                                  "size":  1,
+                                                                                                                  "title":  "Missing Updates by Machine",
+                                                                                                                  "timeContextFromParameter":  "timeRange",
+                                                                                                                  "queryType":  0,
+                                                                                                                  "resourceType":  "microsoft.operationalinsights/workspaces",
+                                                                                                                  "crossComponentResources":  [
+                                                                                                                                                  "{Workspace}"
+                                                                                                                                              ]
+                                                                                                              },
+                                                                                                  "name":  "patch-missing"
+                                                                                              },
+                                                                                              {
+                                                                                                  "type":  3,
+                                                                                                  "content":  {
+                                                                                                                  "version":  "KqlItem/1.0",
+                                                                                                                  "query":  "union isfuzzy=true UpdateSummary\n| extend Installed = tolong(column_ifexists(\u0027InstalledCount\u0027, 0)), Missing = tolong(column_ifexists(\u0027MissingCount\u0027, column_ifexists(\u0027TotalUpdatesMissing\u0027, 0)))\n| summarize Installed = sum(Installed), Missing = sum(Missing) by Computer\n| extend CompliancePercent = iff((Installed + Missing) == 0, real(null), round(100.0 * todouble(Installed) / todouble(Installed + Missing), 2))\n| project Computer, Installed, Missing, CompliancePercent\n| order by CompliancePercent asc",
+                                                                                                                  "size":  0,
+                                                                                                                  "title":  "Patch Compliance by Machine",
+                                                                                                                  "timeContextFromParameter":  "timeRange",
+                                                                                                                  "queryType":  0,
+                                                                                                                  "resourceType":  "microsoft.operationalinsights/workspaces",
+                                                                                                                  "crossComponentResources":  [
+                                                                                                                                                  "{Workspace}"
+                                                                                                                                              ],
+                                                                                                                  "visualization":  "table"
+                                                                                                              },
+                                                                                                  "customWidth":  "50",
+                                                                                                  "name":  "patch-compliance"
+                                                                                              },
+                                                                                              {
+                                                                                                  "type":  3,
+                                                                                                  "content":  {
+                                                                                                                  "version":  "KqlItem/1.0",
+                                                                                                                  "query":  "union isfuzzy=true Update\n| where Classification =~ \u0027Critical Updates\u0027 or Classification =~ \u0027Security Updates\u0027\n| summarize Missing = count() by Classification\n| order by Missing desc",
+                                                                                                                  "size":  0,
+                                                                                                                  "title":  "Critical/Security Missing Updates",
+                                                                                                                  "timeContextFromParameter":  "timeRange",
+                                                                                                                  "queryType":  0,
+                                                                                                                  "resourceType":  "microsoft.operationalinsights/workspaces",
+                                                                                                                  "crossComponentResources":  [
+                                                                                                                                                  "{Workspace}"
+                                                                                                                                              ],
+                                                                                                                  "visualization":  "columnchart"
+                                                                                                              },
+                                                                                                  "customWidth":  "50",
+                                                                                                  "name":  "patch-critical"
+                                                                                              }
+                                                                                          ]
+                                                                            },
+                                                                "conditionalVisibility":  {
+                                                                                              "parameterName":  "selectedTab",
+                                                                                              "comparison":  "isEqualTo",
+                                                                                              "value":  "Patch"
+                                                                                          },
+                                                                "name":  "tab-patch"
+                                                            },
+                                                            {
+                                                                "type":  12,
+                                                                "content":  {
+                                                                                "version":  "NotebookGroup/1.0",
+                                                                                "groupType":  "editable",
+                                                                                "title":  "SQL Discovery",
+                                                                                "items":  [
+                                                                                              {
+                                                                                                  "type":  3,
+                                                                                                  "content":  {
+                                                                                                                  "version":  "KqlItem/1.0",
+                                                                                                                  "query":  "union isfuzzy=true ConfigurationData\n| where ConfigDataType == \u0027WindowsServices\u0027\n| extend ServiceNameNorm = tostring(coalesce(column_ifexists(\u0027ServiceName\u0027, \u0027\u0027), column_ifexists(\u0027Name\u0027, \u0027\u0027), column_ifexists(\u0027DisplayName\u0027, \u0027\u0027), column_ifexists(\u0027SvcName\u0027, \u0027\u0027)))\n| extend StateNorm = tostring(coalesce(column_ifexists(\u0027State\u0027, \u0027\u0027), column_ifexists(\u0027Status\u0027, \u0027Unknown\u0027)))\n| where ServiceNameNorm has \u0027MSSQL\u0027\n| summarize SQLServiceInstances = count() by Computer, ServiceName = ServiceNameNorm, State = StateNorm\n| order by SQLServiceInstances desc",
+                                                                                                                  "size":  0,
+                                                                                                                  "title":  "Detected SQL Services (From Guest Inventory)",
+                                                                                                                  "timeContextFromParameter":  "timeRange",
+                                                                                                                  "queryType":  0,
+                                                                                                                  "resourceType":  "microsoft.operationalinsights/workspaces",
+                                                                                                                  "crossComponentResources":  [
+                                                                                                                                                  "{Workspace}"
+                                                                                                                                              ]
+                                                                                                              },
+                                                                                                  "name":  "sql-services"
+                                                                                              },
+                                                                                              {
+                                                                                                  "type":  3,
+                                                                                                  "content":  {
+                                                                                                                  "version":  "KqlItem/1.0",
+                                                                                                                  "query":  "union isfuzzy=true ConfigurationData\n| where ConfigDataType == \u0027Software\u0027\n| extend SoftwareNameNorm = tostring(coalesce(column_ifexists(\u0027SoftwareName\u0027, \u0027\u0027), column_ifexists(\u0027DisplayName\u0027, \u0027\u0027), column_ifexists(\u0027Name\u0027, \u0027\u0027)))\n| extend SoftwareVersionNorm = tostring(coalesce(column_ifexists(\u0027SoftwareVersion\u0027, \u0027Unknown\u0027), column_ifexists(\u0027Version\u0027, \u0027Unknown\u0027), column_ifexists(\u0027DisplayVersion\u0027, \u0027Unknown\u0027)))\n| where SoftwareNameNorm has \u0027SQL Server\u0027\n| summarize InstallCount = count() by SoftwareName = SoftwareNameNorm, SoftwareVersion = SoftwareVersionNorm\n| order by InstallCount desc",
+                                                                                                                  "size":  0,
+                                                                                                                  "title":  "SQL Product Version Breakdown",
+                                                                                                                  "timeContextFromParameter":  "timeRange",
+                                                                                                                  "queryType":  0,
+                                                                                                                  "resourceType":  "microsoft.operationalinsights/workspaces",
+                                                                                                                  "crossComponentResources":  [
+                                                                                                                                                  "{Workspace}"
+                                                                                                                                              ],
+                                                                                                                  "visualization":  "barchart"
+                                                                                                              },
+                                                                                                  "customWidth":  "50",
+                                                                                                  "name":  "sql-version"
+                                                                                              },
+                                                                                              {
+                                                                                                  "type":  3,
+                                                                                                  "content":  {
+                                                                                                                  "version":  "KqlItem/1.0",
+                                                                                                                  "query":  "Resources\n| where type =~ \u0027microsoft.azurearcdata/sqlserverinstances\u0027\n| where \u0027*\u0027 in ({Subscription}) or subscriptionId in ({Subscription})\n| where \u0027*\u0027 in ({ResourceGroup}) or resourceGroup in ({ResourceGroup})\n| project name, location, resourceGroup, subscriptionId, id\n| order by name asc",
+                                                                                                                  "size":  0,
+                                                                                                                  "title":  "Arc-enabled SQL Server Resources",
+                                                                                                                  "queryType":  1,
+                                                                                                                  "resourceType":  "microsoft.resourcegraph/resources",
+                                                                                                                  "crossComponentResources":  [
+                                                                                                                                                  "{Subscription}"
+                                                                                                                                              ],
+                                                                                                                  "gridSettings":  {
+                                                                                                                                       "formatters":  [
+                                                                                                                                                          {
+                                                                                                                                                              "columnMatch":  "id",
+                                                                                                                                                              "formatter":  13,
+                                                                                                                                                              "formatOptions":  {
+                                                                                                                                                                                    "linkTarget":  "Resource",
+                                                                                                                                                                                    "showIcon":  true
+                                                                                                                                                                                }
+                                                                                                                                                          }
+                                                                                                                                                      ]
+                                                                                                                                   }
+                                                                                                              },
+                                                                                                  "customWidth":  "50",
+                                                                                                  "name":  "sql-arc"
+                                                                                              }
+                                                                                          ]
+                                                                            },
+                                                                "conditionalVisibility":  {
+                                                                                              "parameterName":  "selectedTab",
+                                                                                              "comparison":  "isEqualTo",
+                                                                                              "value":  "SQL"
+                                                                                          },
+                                                                "name":  "tab-sql"
+                                                            },
+                                                            {
+                                                                "type":  12,
+                                                                "content":  {
+                                                                                "version":  "NotebookGroup/1.0",
+                                                                                "groupType":  "editable",
+                                                                                "title":  "Shadow IT Detection",
+                                                                                "items":  [
+                                                                                              {
+                                                                                                  "type":  1,
+                                                                                                  "content":  {
+                                                                                                                  "json":  "Use `DbKeywords` to tailor detection patterns. This section highlights non-standard DB software footprints discovered from guest inventory."
+                                                                                                              },
+                                                                                                  "name":  "shadow-help"
+                                                                                              },
+                                                                                              {
+                                                                                                  "type":  3,
+                                                                                                  "content":  {
+                                                                                                                  "version":  "KqlItem/1.0",
+                                                                                                                  "query":  "let Keywords = split(\u0027{DbKeywords}\u0027, \u0027,\u0027);\nunion isfuzzy=true ConfigurationData\n| where ConfigDataType == \u0027Software\u0027\n| extend SoftwareNameNorm = tostring(coalesce(column_ifexists(\u0027SoftwareName\u0027, \u0027\u0027), column_ifexists(\u0027DisplayName\u0027, \u0027\u0027), column_ifexists(\u0027Name\u0027, \u0027\u0027)))\n| extend SoftwareVersionNorm = tostring(coalesce(column_ifexists(\u0027SoftwareVersion\u0027, \u0027Unknown\u0027), column_ifexists(\u0027Version\u0027, \u0027Unknown\u0027), column_ifexists(\u0027DisplayVersion\u0027, \u0027Unknown\u0027)))\n| where SoftwareNameNorm has_any (Keywords)\n| project TimeGenerated, Computer, SoftwareName = SoftwareNameNorm, SoftwareVersion = SoftwareVersionNorm, Publisher\n| order by TimeGenerated desc",
+                                                                                                                  "size":  1,
+                                                                                                                  "title":  "Potential Shadow DB Software",
+                                                                                                                  "timeContextFromParameter":  "timeRange",
+                                                                                                                  "queryType":  0,
+                                                                                                                  "resourceType":  "microsoft.operationalinsights/workspaces",
+                                                                                                                  "crossComponentResources":  [
+                                                                                                                                                  "{Workspace}"
+                                                                                                                                              ]
+                                                                                                              },
+                                                                                                  "name":  "shadow-grid"
+                                                                                              },
+                                                                                              {
+                                                                                                  "type":  3,
+                                                                                                  "content":  {
+                                                                                                                  "version":  "KqlItem/1.0",
+                                                                                                                  "query":  "union isfuzzy=true ConfigurationData\n| where ConfigDataType == \u0027Software\u0027\n| extend SoftwareNameNorm = tostring(coalesce(column_ifexists(\u0027SoftwareName\u0027, \u0027\u0027), column_ifexists(\u0027DisplayName\u0027, \u0027\u0027), column_ifexists(\u0027Name\u0027, \u0027\u0027)))\n| where TimeGenerated \u003e ago(7d)\n| summarize NewlyObserved = dcount(SoftwareNameNorm) by Computer\n| where NewlyObserved \u003e 0\n| order by NewlyObserved desc",
+                                                                                                                  "size":  0,
+                                                                                                                  "title":  "Software Drift (Last 7 Days)",
+                                                                                                                  "timeContextFromParameter":  "timeRange",
+                                                                                                                  "queryType":  0,
+                                                                                                                  "resourceType":  "microsoft.operationalinsights/workspaces",
+                                                                                                                  "crossComponentResources":  [
+                                                                                                                                                  "{Workspace}"
+                                                                                                                                              ],
+                                                                                                                  "visualization":  "table"
+                                                                                                              },
+                                                                                                  "name":  "shadow-drift"
+                                                                                              }
+                                                                                          ]
+                                                                            },
+                                                                "conditionalVisibility":  {
+                                                                                              "parameterName":  "selectedTab",
+                                                                                              "comparison":  "isEqualTo",
+                                                                                              "value":  "ShadowIT"
+                                                                                          },
+                                                                "name":  "tab-shadow"
+                                                            },
+                                                            {
+                                                                "type":  12,
+                                                                "content":  {
+                                                                                "version":  "NotebookGroup/1.0",
+                                                                                "groupType":  "editable",
+                                                                                "title":  "Security and Coverage",
+                                                                                "items":  [
+                                                                                              {
+                                                                                                  "type":  3,
+                                                                                                  "content":  {
+                                                                                                                  "version":  "KqlItem/1.0",
+                                                                                                                  "query":  "union isfuzzy=true SecurityRecommendation\n| summarize Findings = count() by RecommendationDisplayName, RecommendationState\n| order by Findings desc",
+                                                                                                                  "size":  1,
+                                                                                                                  "title":  "Defender Recommendations",
+                                                                                                                  "timeContextFromParameter":  "timeRange",
+                                                                                                                  "queryType":  0,
+                                                                                                                  "resourceType":  "microsoft.operationalinsights/workspaces",
+                                                                                                                  "crossComponentResources":  [
+                                                                                                                                                  "{Workspace}"
+                                                                                                                                              ]
+                                                                                                              },
+                                                                                                  "name":  "sec-defender"
+                                                                                              },
+                                                                                              {
+                                                                                                  "type":  3,
+                                                                                                  "content":  {
+                                                                                                                  "version":  "KqlItem/1.0",
+                                                                                                                  "query":  "Resources\n| where type in~ (\u0027microsoft.compute/virtualmachines\u0027,\u0027microsoft.hybridcompute/machines\u0027)\n| where \u0027*\u0027 in ({Subscription}) or subscriptionId in ({Subscription})\n| summarize Total=count(), ArcEnabled=countif(type =~ \u0027microsoft.hybridcompute/machines\u0027)\n| extend ArcCoveragePercent = iff(Total == 0, real(0), round(100.0 * todouble(ArcEnabled) / todouble(Total), 2))\n| project Total, ArcEnabled, ArcCoveragePercent",
+                                                                                                                  "size":  0,
+                                                                                                                  "title":  "Arc Coverage",
+                                                                                                                  "queryType":  1,
+                                                                                                                  "resourceType":  "microsoft.resourcegraph/resources",
+                                                                                                                  "crossComponentResources":  [
+                                                                                                                                                  "{Subscription}"
+                                                                                                                                              ],
+                                                                                                                  "visualization":  "table"
+                                                                                                              },
+                                                                                                  "customWidth":  "50",
+                                                                                                  "name":  "sec-arc-coverage"
+                                                                                              },
+                                                                                              {
+                                                                                                  "type":  3,
+                                                                                                  "content":  {
+                                                                                                                  "version":  "KqlItem/1.0",
+                                                                                                                  "query":  "Heartbeat\n| summarize LastHeartbeat = max(TimeGenerated) by Computer\n| where LastHeartbeat \u003c ago(24h)\n| project Computer, LastHeartbeat\n| order by LastHeartbeat asc",
+                                                                                                                  "size":  0,
+                                                                                                                  "title":  "Machines Not Reporting (\u003e24h)",
+                                                                                                                  "timeContextFromParameter":  "timeRange",
+                                                                                                                  "queryType":  0,
+                                                                                                                  "resourceType":  "microsoft.operationalinsights/workspaces",
+                                                                                                                  "crossComponentResources":  [
+                                                                                                                                                  "{Workspace}"
+                                                                                                                                              ]
+                                                                                                              },
+                                                                                                  "customWidth":  "50",
+                                                                                                  "name":  "sec-not-reporting"
+                                                                                              }
+                                                                                          ]
+                                                                            },
+                                                                "conditionalVisibility":  {
+                                                                                              "parameterName":  "selectedTab",
+                                                                                              "comparison":  "isEqualTo",
+                                                                                              "value":  "Security"
+                                                                                          },
+                                                                "name":  "tab-security"
+                                                            }
+                                                        ],
+                                              "isLocked":  false,
+                                              "fallbackResourceIds":  [
+                                                                          "azure monitor"
+                                                                      ]
+                                          }
+                  },
+    "resources":  [
+                      {
+                          "name":  "[parameters(\u0027workbookId\u0027)]",
+                          "type":  "microsoft.insights/workbooks",
+                          "location":  "[resourceGroup().location]",
+                          "apiVersion":  "2022-04-01",
+                          "dependsOn":  [
+
+                                        ],
+                          "kind":  "shared",
+                          "properties":  {
+                                             "displayName":  "[parameters(\u0027workbookDisplayName\u0027)]",
+                                             "serializedData":  "[string(variables(\u0027workbookContent\u0027))]",
+                                             "version":  "1.0",
+                                             "sourceId":  "[parameters(\u0027workbookSourceId\u0027)]",
+                                             "category":  "[parameters(\u0027workbookType\u0027)]"
+                                         }
+                      }
+                  ],
+    "outputs":  {
+                    "workbookId":  {
+                                       "type":  "string",
+                                       "value":  "[resourceId(\u0027microsoft.insights/workbooks\u0027, parameters(\u0027workbookId\u0027))]"
+                                   }
+                }
+}
