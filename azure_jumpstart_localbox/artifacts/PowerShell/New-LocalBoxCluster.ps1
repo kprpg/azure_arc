@@ -31,8 +31,68 @@ Write-Output "Downloading nested VMs VHDX files. This can take some time, hold t
 #azcopy cp 'https://jumpstartprodsg.blob.core.windows.net/jslocal/localbox/prod/AzLocal2509.vhdx' "$($LocalBoxConfig.Paths.VHDDir)\AzL-node.vhdx" --recursive=true --check-length=false --log-level=ERROR
 #azcopy cp 'https://jumpstartprodsg.blob.core.windows.net/jslocal/localbox/prod/AzLocal2509.sha256' "$($LocalBoxConfig.Paths.VHDDir)\AzL-node.sha256" --recursive=true --check-length=false --log-level=ERROR
 
-azcopy cp 'https://azlocalvhds.blob.core.windows.net/images/AzLocal2601.vhdx' "$($LocalBoxConfig.Paths.VHDDir)\AzL-node.vhdx" --recursive=true --check-length=false --log-level=ERROR
-azcopy cp 'https://azlocalvhds.blob.core.windows.net/images/AzLocal2601.sha256' "$($LocalBoxConfig.Paths.VHDDir)\AzL-node.sha256" --recursive=true --check-length=false --log-level=ERROR
+# azcopy cp 'https://azlocalvhds.blob.core.windows.net/images/AzLocal2601.vhdx' "$($LocalBoxConfig.Paths.VHDDir)\AzL-node.vhdx" --recursive=true --check-length=false --log-level=ERROR
+# azcopy cp 'https://azlocalvhds.blob.core.windows.net/images/AzLocal2601.sha256' "$($LocalBoxConfig.Paths.VHDDir)\AzL-node.sha256" --recursive=true --check-length=false --log-level=ERROR
+
+# Latest available Azure Local node image in https://azlocalvhds.blob.core.windows.net/images
+# (Discovered dynamically at runtime; falls back to AzLocal2601 if discovery fails)
+$azLocalContainerBaseUri = 'https://azlocalvhds.blob.core.windows.net/images'
+$fallbackAzLocalVhdxName = 'AzLocal2601.vhdx'
+
+$azLocalNodeVhdxUri = "$azLocalContainerBaseUri/$fallbackAzLocalVhdxName"
+$azLocalNodeSha256Uri = "$azLocalContainerBaseUri/$($fallbackAzLocalVhdxName -replace '\.vhdx$','.sha256')"
+
+try {
+    $bestVer = -1
+    $bestName = $null
+    $marker = $null
+
+    for ($iter = 0; $iter -lt 50; $iter++) {
+        if ([string]::IsNullOrEmpty($marker)) {
+            $listUri = "$azLocalContainerBaseUri?restype=container&comp=list&maxresults=5000"
+        }
+        else {
+            $escapedMarker = [uri]::EscapeDataString($marker)
+            $listUri = "$azLocalContainerBaseUri?restype=container&comp=list&maxresults=5000&marker=$escapedMarker"
+        }
+
+        $r = Invoke-WebRequest -UseBasicParsing -Uri $listUri -Method Get
+        $t = [string]$r.Content
+        $t = $t.TrimStart([char]0xFEFF, [char]0xEF, [char]0xBB, [char]0xBF)
+        $x = [xml]$t
+
+        foreach ($b in $x.EnumerationResults.Blobs.Blob) {
+            $n = [string]$b.Name
+            if ($n -match '^AzLocal(\d{4})\.vhdx$') {
+                $v = [int]$matches[1]
+                if ($v -gt $bestVer) {
+                    $bestVer = $v
+                    $bestName = $n
+                }
+            }
+        }
+
+        $marker = [string]$x.EnumerationResults.NextMarker
+        if ([string]::IsNullOrEmpty($marker)) {
+            break
+        }
+    }
+
+    if (-not [string]::IsNullOrEmpty($bestName)) {
+        $azLocalNodeVhdxUri = "$azLocalContainerBaseUri/$bestName"
+        $azLocalNodeSha256Uri = "$azLocalContainerBaseUri/$($bestName -replace '\.vhdx$','.sha256')"
+        Write-Host "Using latest Azure Local node VHD from container: $bestName" -ForegroundColor Green
+    }
+    else {
+        Write-Host "Could not discover latest Azure Local node VHD; falling back to $fallbackAzLocalVhdxName" -ForegroundColor Yellow
+    }
+}
+catch {
+    Write-Host "Failed to query Azure Local VHD container; falling back to $fallbackAzLocalVhdxName. Error: $($_.Exception.Message)" -ForegroundColor Yellow
+}
+
+azcopy cp $azLocalNodeVhdxUri "$($LocalBoxConfig.Paths.VHDDir)\AzL-node.vhdx" --recursive=true --check-length=false --log-level=ERROR
+azcopy cp $azLocalNodeSha256Uri "$($LocalBoxConfig.Paths.VHDDir)\AzL-node.sha256" --recursive=true --check-length=false --log-level=ERROR
 
 $checksum = Get-FileHash -Path "$($LocalBoxConfig.Paths.VHDDir)\AzL-node.vhdx"
 $hash = Get-Content -Path "$($LocalBoxConfig.Paths.VHDDir)\AzL-node.sha256"
@@ -62,7 +122,7 @@ $localCred = new-object -typename System.Management.Automation.PSCredential `
     -argumentlist "Administrator", (ConvertTo-SecureString $LocalBoxConfig.SDNAdminPassword -AsPlainText -Force)
 
 $domainCred = new-object -typename System.Management.Automation.PSCredential `
-    -argumentlist (($LocalBoxConfig.SDNDomainFQDN.Split(".")[0]) +"\Administrator"), (ConvertTo-SecureString $LocalBoxConfig.SDNAdminPassword -AsPlainText -Force)
+    -argumentlist (($LocalBoxConfig.SDNDomainFQDN.Split(".")[0]) + "\Administrator"), (ConvertTo-SecureString $LocalBoxConfig.SDNAdminPassword -AsPlainText -Force)
 
 # Enable PSRemoting
 Write-Host "[Build cluster - Step 2/11] Preparing Azure VM virtualization host..." -ForegroundColor Green
@@ -196,84 +256,84 @@ Start-Sleep -Seconds 600
 
 if ("True" -eq $env:autoDeployClusterResource) {
 
-Update-AzDeploymentProgressTag -ProgressString 'Validating Azure Local cluster deployment' -ResourceGroupName $env:resourceGroup -ComputerName $env:computername
+    Update-AzDeploymentProgressTag -ProgressString 'Validating Azure Local cluster deployment' -ResourceGroupName $env:resourceGroup -ComputerName $env:computername
 
-$TemplateFile = Join-Path -Path $env:LocalBoxDir -ChildPath "azlocal.json"
-$TemplateParameterFile = Join-Path -Path $env:LocalBoxDir -ChildPath "azlocal.parameters.json"
+    $TemplateFile = Join-Path -Path $env:LocalBoxDir -ChildPath "azlocal.json"
+    $TemplateParameterFile = Join-Path -Path $env:LocalBoxDir -ChildPath "azlocal.parameters.json"
 
-try {
-    New-AzResourceGroupDeployment -Name 'localcluster-validate' -ResourceGroupName $env:resourceGroup -TemplateFile $TemplateFile -TemplateParameterFile $TemplateParameterFile -OutVariable ClusterValidationDeployment -ErrorAction Stop
-}
-catch {
-    Write-Output "Validation failed. Re-run New-AzResourceGroupDeployment to retry. Error: $($_.Exception.Message)"
-}
+    try {
+        New-AzResourceGroupDeployment -Name 'localcluster-validate' -ResourceGroupName $env:resourceGroup -TemplateFile $TemplateFile -TemplateParameterFile $TemplateParameterFile -OutVariable ClusterValidationDeployment -ErrorAction Stop
+    }
+    catch {
+        Write-Output "Validation failed. Re-run New-AzResourceGroupDeployment to retry. Error: $($_.Exception.Message)"
+    }
 
 
-<#
+    <#
   Adding known governance tags for avoiding disruptions to the deployment. These tags are applicable to ONLY Microsoft-internal Azure lab tenants and designed for managing automated governance processes related to cost optimization and security controls.
   Some resources are not created by the Bicep template for LocalBox, hence the need to add them here as part of the automation.
 #>
 
-$VmResource = Get-AzResource -ResourceName $env:computername -ResourceGroupName $env:resourceGroup -ResourceType 'microsoft.compute/virtualmachines'
+    $VmResource = Get-AzResource -ResourceName $env:computername -ResourceGroupName $env:resourceGroup -ResourceType 'microsoft.compute/virtualmachines'
 
-if ($VmResource.Tags.ContainsKey('CostControl') -and $VmResource.Tags.ContainsKey('SecurityControl')) {
+    if ($VmResource.Tags.ContainsKey('CostControl') -and $VmResource.Tags.ContainsKey('SecurityControl')) {
 
-    if($VmResource.Tags.CostControl -eq 'Ignore' -and $VmResource.Tags.SecurityControl -eq 'Ignore') {
+        if ($VmResource.Tags.CostControl -eq 'Ignore' -and $VmResource.Tags.SecurityControl -eq 'Ignore') {
 
-        Write-Output "CostControl and SecurityControl tags are set to 'Ignore' for the VM resource, adding them to other resources created by the Azure Local deployment"
+            Write-Output "CostControl and SecurityControl tags are set to 'Ignore' for the VM resource, adding them to other resources created by the Azure Local deployment"
 
-        $tags = @{
-            'CostControl' = 'Ignore'
-            'SecurityControl' = 'Ignore'
+            $tags = @{
+                'CostControl'     = 'Ignore'
+                'SecurityControl' = 'Ignore'
+            }
+
+            Get-AzResource -ResourceGroupName $env:resourceGroup -ResourceType 'Microsoft.KeyVault/vaults' | Update-AzTag -Tag $tags -Operation Merge
+
+            Get-AzResource -ResourceGroupName $env:resourceGroup -ResourceType 'Microsoft.Storage/storageAccounts' | Update-AzTag -Tag $tags -Operation Merge
+
+            Get-AzResource -ResourceGroupName $env:resourceGroup -ResourceType 'Microsoft.Compute/disks' | Update-AzTag -Tag $tags -Operation Merge
+
         }
 
-        Get-AzResource -ResourceGroupName $env:resourceGroup -ResourceType 'Microsoft.KeyVault/vaults' | Update-AzTag -Tag $tags -Operation Merge
-
-        Get-AzResource -ResourceGroupName $env:resourceGroup -ResourceType 'Microsoft.Storage/storageAccounts' | Update-AzTag -Tag $tags -Operation Merge
-
-        Get-AzResource -ResourceGroupName $env:resourceGroup -ResourceType 'Microsoft.Compute/disks' | Update-AzTag -Tag $tags -Operation Merge
-
     }
 
-}
+    Write-Host "[Build cluster - Step 11/11] Run cluster deployment..." -ForegroundColor Green
 
-Write-Host "[Build cluster - Step 11/11] Run cluster deployment..." -ForegroundColor Green
-
-if ($ClusterValidationDeployment.ProvisioningState -eq "Succeeded") {
+    if ($ClusterValidationDeployment.ProvisioningState -eq "Succeeded") {
 
 
-    Update-AzDeploymentProgressTag -ProgressString 'Deploying Azure Local cluster' -ResourceGroupName $env:resourceGroup -ComputerName $env:computername
+        Update-AzDeploymentProgressTag -ProgressString 'Deploying Azure Local cluster' -ResourceGroupName $env:resourceGroup -ComputerName $env:computername
 
-    Write-Host "Validation succeeded. Deploying Local cluster..."
+        Write-Host "Validation succeeded. Deploying Local cluster..."
 
-    try {
-        New-AzResourceGroupDeployment -Name 'localcluster-deploy' -ResourceGroupName $env:resourceGroup -TemplateFile $TemplateFile -deploymentMode "Deploy" -TemplateParameterFile $TemplateParameterFile -OutVariable ClusterDeployment -ErrorAction Stop
-    }
-    catch {
-        Write-Output "Deployment command failed. Re-run New-AzResourceGroupDeployment to retry. Error: $($_.Exception.Message)"
-    }
+        try {
+            New-AzResourceGroupDeployment -Name 'localcluster-deploy' -ResourceGroupName $env:resourceGroup -TemplateFile $TemplateFile -deploymentMode "Deploy" -TemplateParameterFile $TemplateParameterFile -OutVariable ClusterDeployment -ErrorAction Stop
+        }
+        catch {
+            Write-Output "Deployment command failed. Re-run New-AzResourceGroupDeployment to retry. Error: $($_.Exception.Message)"
+        }
 
-    if ("True" -eq $env:autoUpgradeClusterResource -and $ClusterDeployment.ProvisioningState -eq "Succeeded") {
+        if ("True" -eq $env:autoUpgradeClusterResource -and $ClusterDeployment.ProvisioningState -eq "Succeeded") {
 
-        Write-Host "Deployment succeeded. Upgrading Local cluster..."
+            Write-Host "Deployment succeeded. Upgrading Local cluster..."
 
-        Update-AzDeploymentProgressTag -ProgressString 'Upgrading Azure Local cluster' -ResourceGroupName $env:resourceGroup -ComputerName $env:computername
+            Update-AzDeploymentProgressTag -ProgressString 'Upgrading Azure Local cluster' -ResourceGroupName $env:resourceGroup -ComputerName $env:computername
 
-        Update-AzLocalCluster -LocalBoxConfig $LocalBoxConfig -domainCred $domainCred
+            Update-AzLocalCluster -LocalBoxConfig $LocalBoxConfig -domainCred $domainCred
+
+        }
+        else {
+
+            Write-Host '$autoUpgradeClusterResource is false, skipping Local cluster upgrade...follow the documentation to upgrade the cluster manually'
+
+        }
 
     }
     else {
 
-        Write-Host '$autoUpgradeClusterResource is false, skipping Local cluster upgrade...follow the documentation to upgrade the cluster manually'
+        Write-Error "Validation failed. Aborting deployment. Re-run New-AzResourceGroupDeployment to retry."
 
     }
-
-}
-else {
-
-    Write-Error "Validation failed. Aborting deployment. Re-run New-AzResourceGroupDeployment to retry."
-
-}
 
 }
 else {
