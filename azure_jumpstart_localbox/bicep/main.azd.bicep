@@ -100,8 +100,6 @@ module hostDeployment 'host/host.bicep' = {
   params: {
     windowsAdminUsername: windowsAdminUsername
     windowsAdminPassword: windowsAdminPassword
-    spnClientId: spnClientId
-    spnClientSecret: spnClientSecret
     tenantId: tenantId
     spnProviderId: spnProviderId
     workspaceName: logAnalyticsWorkspaceName
