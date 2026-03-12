@@ -60,7 +60,7 @@
             "value": "dataLogSize-stage"
         },
         "replicas": {
-            "value": replicasStage
+            "value": "replicasStage"
         },
         "apiVersion": {
             "value": "2023-01-15-preview"
@@ -72,7 +72,7 @@
             "value": "LicenseIncluded"
         },
         "port": {
-            "value": port-stage
+            "value": "port-stage"
         }
     }
 }

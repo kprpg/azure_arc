@@ -51,7 +51,7 @@
             "value": "hciResourceProviderObjectID-staging"
         },
         "arcNodeResourceIds": {
-            "value": arcNodeResourceIds-staging
+            "value": "arcNodeResourceIds-staging"
         },
         "domainFqdn": {
             "value": "domainFqdn-staging"
@@ -111,13 +111,13 @@
             "value": "endingIp-staging"
         },
         "dnsServers": {
-            "value": dnsServers-staging
+            "value": "dnsServers-staging"
         },
         "useDhcp": {
             "value": false
         },
         "physicalNodesSettings": {
-            "value": physicalNodesSettings-staging
+            "value": "physicalNodesSettings-staging"
         },
         "networkingType": {
             "value": "switchlessMultiServerDeployment"

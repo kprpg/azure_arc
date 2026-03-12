@@ -14,7 +14,7 @@ param spnClientSecret string = 'null'
 param tenantId string = 'null'
 
 @description('Azure AD object id for your Microsoft.AzureStackHCI resource provider')
-param spnProviderId string ='null'
+param spnProviderId string = 'null'
 
 @description('Username for Windows account')
 param windowsAdminUsername string = 'arcdemo'
@@ -41,7 +41,7 @@ param githubBranch string = 'main'
 param deployBastion bool = false
 
 @description('Location to deploy resources')
-@allowed(['eastus', 'westeurope', 'australiaeast','canadacentral'])
+@allowed(['eastus', 'westeurope', 'australiaeast', 'canadacentral'])
 param location string
 
 @description('Override default RDP port using this parameter. Default is 3389.')
@@ -52,6 +52,9 @@ param autoDeployClusterResource bool = false
 
 @description('Choice to enable automatic upgrade of Azure Arc enabled HCI cluster resource after the client VM deployment is complete. Only applicable when autoDeployClusterResource is true. Default is false.')
 param autoUpgradeClusterResource bool = false
+
+@description('Resource tags')
+param resourceTags object = {}
 
 var templateBaseUrl = 'https://raw.githubusercontent.com/${githubAccount}/azure_arc/${githubBranch}/azure_jumpstart_localbox/'
 
@@ -68,6 +71,7 @@ module mgmtArtifactsAndPolicyDeployment 'mgmt/mgmtArtifacts.bicep' = {
   params: {
     workspaceName: logAnalyticsWorkspaceName
     location: location
+    resourceTags: resourceTags
   }
 }
 
@@ -77,6 +81,7 @@ module networkDeployment 'network/network.bicep' = {
   params: {
     deployBastion: deployBastion
     location: location
+    resourceTags: resourceTags
   }
 }
 
@@ -85,6 +90,7 @@ module storageAccountDeployment 'mgmt/storageAccount.bicep' = {
   scope: rg
   params: {
     location: location
+    resourceTags: resourceTags
   }
 }
 
@@ -108,6 +114,7 @@ module hostDeployment 'host/host.bicep' = {
     rdpPort: rdpPort
     autoDeployClusterResource: autoDeployClusterResource
     autoUpgradeClusterResource: autoUpgradeClusterResource
+    resourceTags: resourceTags
   }
 }
 

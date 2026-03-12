@@ -57,7 +57,7 @@
             "value": "dataLogSize-stage"
         },
         "replicas": {
-            "value": replicasStage
+            "value": "replicasStage"
         },
         "resourceTags": {
             "value": {
@@ -92,7 +92,7 @@
             "value": "dnsNameSecondary-stage"
         },
         "port": {
-            "value": port-stage
+            "value": "port-stage"
         }
     }
 }
