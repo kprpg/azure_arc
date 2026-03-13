@@ -24,6 +24,7 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
 $SubscriptionId = 'cbaf34df-7bb5-4fcf-bd7d-686a5f43ad31'
+$policyAccessCheckScript = Join-Path $PSScriptRoot 'hooks\Test-LinkedPolicyAccess.ps1'
 
 function Get-DefaultParametersFile {
     $jsonParam = Join-Path $PSScriptRoot 'bicep\main.parameters.json'
@@ -118,6 +119,13 @@ Write-Verbose "Creating/ensuring resource group exists..."
 if ($PSCmdlet.ShouldProcess("Resource group '$ResourceGroupName' in '$Location'", 'Create or update')) {
     Invoke-AzCli -Args @('group', 'create', '--name', $ResourceGroupName, '--location', $Location) -NoOutput
 }
+
+if (-not (Test-Path -LiteralPath $policyAccessCheckScript)) {
+    throw "Policy access preflight script not found: $policyAccessCheckScript"
+}
+
+Write-Verbose 'Checking linked policy access before deployment...'
+& $policyAccessCheckScript -SubscriptionId $SubscriptionId -ResourceGroupName $ResourceGroupName
 
 $deploymentName = 'azurelocal-' + (Get-Date -Format 'yyyyMMdd-HHmmss')
 Write-Verbose "Starting group deployment '$deploymentName'..."

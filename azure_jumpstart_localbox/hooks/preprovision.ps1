@@ -33,6 +33,13 @@ if ($azCliTenantId -ne $tenantId) {
 Write-Host "Setting Azure CLI context to the same subscription as Azure PowerShell..."
 az account set --subscription $env:AZURE_SUBSCRIPTION_ID
 
+$policyAccessCheckScript = Join-Path $PSScriptRoot 'Test-LinkedPolicyAccess.ps1'
+if (-not (Test-Path -LiteralPath $policyAccessCheckScript)) {
+    throw "Policy access preflight script not found: $policyAccessCheckScript"
+}
+
+& $policyAccessCheckScript -SubscriptionId $env:AZURE_SUBSCRIPTION_ID -ResourceGroupName $env:AZURE_RESOURCE_GROUP
+
 # Register providers
 Write-Host "Registering Azure providers..."
 az provider register --namespace Microsoft.HybridCompute --wait
