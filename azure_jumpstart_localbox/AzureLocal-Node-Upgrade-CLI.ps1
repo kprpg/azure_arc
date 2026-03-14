@@ -1,43 +1,35 @@
-$ErrorActionPreference='Stop'
-if ($PSVersionTable.PSEdition -ne 'Core') { throw 'Run this script with pwsh (PowerShell 7).' }
-Import-Module Az.Accounts -ErrorAction Stop
-Import-Module Az.Resources -ErrorAction Stop
-Import-Module Az.ConnectedMachine -ErrorAction Stop
+[CmdletBinding()]
+param(
+    [Parameter()]
+    [string] $SubscriptionId = $env:AZURE_SUBSCRIPTION_ID,
 
-# Arc agent upgrade for multiple Arc-enabled servers.
-# This uses Az PowerShell Run Command because this environment's Azure CLI
-# extension does not expose "az connectedmachine run-command".
+    [Parameter()]
+    [string] $ResourceGroupName = $env:AZURE_RESOURCE_GROUP,
 
-$subscriptionId = "5f3972d8-b1e2-4a27-bf67-0db461308c53"
-$resourceGroupName = "RGAZLOCAL"
-$machines = @("AZLHOST1", "AZLHOST2")
+    [Parameter()]
+    [string[]] $MachineName,
 
-Set-AzContext -Subscription $subscriptionId | Out-Null
+    [Parameter()]
+    [switch] $WaitForCompletion,
 
-foreach ($machine in $machines) {
-    Write-Host "Configuring $machine..." -ForegroundColor Cyan
+    [Parameter()]
+    [ValidateRange(10, 7200)]
+    [int] $TimeoutInSeconds = 1800,
 
-    # Keep automatic upgrades enabled for future upgrades.
-    Invoke-AzRestMethod `
-        -ResourceGroupName $resourceGroupName `
-        -ResourceProviderName "Microsoft.HybridCompute" `
-        -ResourceType "machines" `
-        -ApiVersion "2024-07-01" `
-        -Name $machine `
-        -Method PATCH `
-        -Payload '{"properties":{"agentUpgrade":{"enableAutomaticUpgrade":true}}}' | Out-Null
+    [Parameter()]
+    [ValidateRange(5, 300)]
+    [int] $PollIntervalSeconds = 15
+)
 
-    # Trigger immediate agent upgrade on the host through Arc Run Command.
-    $location = (Get-AzConnectedMachine -ResourceGroupName $resourceGroupName -Name $machine).Location
-    $runName = "UpgradeArcAgent-{0}-{1}" -f $machine, (Get-Date -Format "yyyyMMddHHmmss")
-
-    New-AzConnectedMachineRunCommand `
-        -ResourceGroupName $resourceGroupName `
-        -MachineName $machine `
-        -RunCommandName $runName `
-        -Location $location `
-        -SourceScript "azcmagent upgrade; azcmagent show" `
-        -TimeoutInSecond 1800 | Out-Null
-
-    Write-Host "Submitted run command '$runName' for $machine" -ForegroundColor Green
+$scriptPath = Join-Path $PSScriptRoot 'AzureLocal-Node-Upgrade.ps1'
+if (-not (Test-Path -LiteralPath $scriptPath)) {
+    throw "Upgrade script not found: $scriptPath"
 }
+
+& $scriptPath `
+    -SubscriptionId $SubscriptionId `
+    -ResourceGroupName $ResourceGroupName `
+    -MachineName $MachineName `
+    -WaitForCompletion:$WaitForCompletion `
+    -TimeoutInSeconds $TimeoutInSeconds `
+    -PollIntervalSeconds $PollIntervalSeconds
