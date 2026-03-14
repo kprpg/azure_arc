@@ -1,2 +1,2 @@
-az group create --name "rgAzLocal"  --location "West Europe"
-az deployment group create -g "rgAzLocal" -f "main.bicep" -p "main.bicepparam"
+az group create --name "rgAzureLocal"  --location "West Europe"
+az deployment group create -g "rgAzureLocal" -f "main.bicep" -p "main.bicepparam"
