@@ -118,14 +118,11 @@ function Get-RunCommandState {
         [string] $RunCommandName
     )
 
-    $path = "/subscriptions/$ResolvedSubscriptionId/resourceGroups/$TargetResourceGroupName/providers/Microsoft.HybridCompute/machines/$TargetMachineName/runCommands/$RunCommandName?api-version=2024-07-01&`$expand=instanceView"
-    $response = Invoke-AzRestMethod -Method GET -Path $path
-
-    if ($response.StatusCode -lt 200 -or $response.StatusCode -ge 300) {
-        throw "Failed to query run command status for '$RunCommandName' on '$TargetMachineName'. HTTP status code: $($response.StatusCode)."
-    }
-
-    return ($response.Content | ConvertFrom-Json -Depth 100)
+    return Get-AzConnectedMachineRunCommand `
+        -SubscriptionId $ResolvedSubscriptionId `
+        -ResourceGroupName $TargetResourceGroupName `
+        -MachineName $TargetMachineName `
+        -RunCommandName $RunCommandName
 }
 
 function Wait-RunCommandCompletion {
@@ -152,8 +149,8 @@ function Wait-RunCommandCompletion {
     $deadline = (Get-Date).AddSeconds($TimeoutSeconds)
     do {
         $state = Get-RunCommandState -ResolvedSubscriptionId $ResolvedSubscriptionId -TargetResourceGroupName $TargetResourceGroupName -TargetMachineName $TargetMachineName -RunCommandName $RunCommandName
-        $provisioningState = [string] $state.properties.provisioningState
-        $executionState = [string] $state.properties.instanceView.executionState
+        $provisioningState = [string] $state.ProvisioningState
+        $executionState = [string] $state.InstanceViewExecutionState
 
         if ($executionState -in @('Succeeded', 'Failed', 'TimedOut', 'Canceled')) {
             return $state
@@ -199,6 +196,17 @@ foreach ($machine in $targetMachines) {
     $currentVersion = if ($machine.AgentVersion) { $machine.AgentVersion } else { '<unknown>' }
     Write-Host "Current Arc agent version: $currentVersion"
 
+    $upgradeScript = @'
+$ErrorActionPreference = "Stop"
+$ProgressPreference = "SilentlyContinue"
+$logDir = "C:\Support\Logs"
+$msiPath = Join-Path $env:TEMP "AzureConnectedMachineAgent.msi"
+New-Item -ItemType Directory -Path $logDir -Force | Out-Null
+Invoke-WebRequest -Uri "https://aka.ms/AzureConnectedMachineAgent" -OutFile $msiPath
+Start-Process -FilePath "msiexec.exe" -ArgumentList "/i `"$msiPath`" /qn /l*v `"C:\Support\Logs\azcmagentupgradesetup.log`"" -Wait -NoNewWindow
+azcmagent show
+'@
+
     Invoke-AzRestMethod `
         -ResourceGroupName $ResourceGroupName `
         -ResourceProviderName 'Microsoft.HybridCompute' `
@@ -208,14 +216,14 @@ foreach ($machine in $targetMachines) {
         -Method PATCH `
         -Payload '{"properties":{"agentUpgrade":{"enableAutomaticUpgrade":true}}}' | Out-Null
 
-    $runName = 'UpgradeArcAgent-{0}-{1}' -f $machine.Name, (Get-Date -Format 'yyyyMMddHHmmss')
+    $runName = 'InstallLatestArcAgent-{0}-{1}' -f $machine.Name, (Get-Date -Format 'yyyyMMddHHmmss')
     New-AzConnectedMachineRunCommand `
         -SubscriptionId $resolvedSubscriptionId `
         -ResourceGroupName $ResourceGroupName `
         -MachineName $machine.Name `
         -RunCommandName $runName `
         -Location $machine.Location `
-        -SourceScript 'azcmagent upgrade; azcmagent show' `
+        -SourceScript $upgradeScript `
         -TimeoutInSecond $TimeoutInSeconds | Out-Null
 
     Write-Host "Submitted run command '$runName' for $($machine.Name)." -ForegroundColor Green
@@ -230,9 +238,9 @@ foreach ($machine in $targetMachines) {
             -TimeoutSeconds $TimeoutInSeconds `
             -IntervalSeconds $PollIntervalSeconds
 
-        $executionState = [string] $state.properties.instanceView.executionState
-        $output = [string] $state.properties.instanceView.output
-        $errorText = [string] $state.properties.instanceView.error
+        $executionState = [string] $state.InstanceViewExecutionState
+        $output = [string] $state.InstanceViewOutput
+        $errorText = [string] $state.InstanceViewError
 
         if ($executionState -ne 'Succeeded') {
             throw "Arc agent upgrade failed for '$($machine.Name)'. Execution state: $executionState. Error: $errorText"
